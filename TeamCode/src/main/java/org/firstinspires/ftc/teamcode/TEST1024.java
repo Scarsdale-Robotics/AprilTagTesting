@@ -1,39 +1,25 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Size;
-
-import com.arcrobotics.ftclib.drivebase.MecanumDrive;
-import com.arcrobotics.ftclib.drivebase.RobotDrive;
+import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.MotorControlAlgorithm;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
-@TeleOp(name = "Drive10/29")
+@TeleOp(name = "AUTO11/4Fixed")
 public class TEST1024 extends LinearOpMode {
-    public Motor leftFront;
-    public Motor leftBack;
-    public Motor rightFront;
-    public Motor rightBack;
+
+    public Motor leftFront, leftBack, rightFront, rightBack;
     public DriveSubsystem drive;
     public GoBildaPinpointDriver pinpoint;
 
     @Override
     public void runOpMode() throws InterruptedException {
+        // Motor initialization
         leftFront = new Motor(hardwareMap, "leftFront", Motor.GoBILDA.RPM_312);
         rightFront = new Motor(hardwareMap, "rightFront", Motor.GoBILDA.RPM_312);
         leftBack = new Motor(hardwareMap, "leftBack", Motor.GoBILDA.RPM_312);
@@ -55,40 +41,122 @@ public class TEST1024 extends LinearOpMode {
         rightBack.setRunMode(Motor.RunMode.RawPower);
 
         leftFront.setInverted(true);
-        rightFront.setInverted(true);
         leftBack.setInverted(true);
+        rightFront.setInverted(true);
         rightBack.setInverted(true);
 
-        leftFront.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBack.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBack.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
         leftFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        rightFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        this.pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "Pinpoint");
-        this.drive = new DriveSubsystem(
-                leftFront,
-                rightFront,
-                leftBack,
-                rightBack
-        );
+
+        // Pinpoint odometry
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "Pinpoint");
+        drive = new DriveSubsystem(leftFront, rightFront, leftBack, rightBack);
+
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        pinpoint.setOffsets(6,6, DistanceUnit.INCH);
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        pinpoint.setOffsets(5.5, 5, DistanceUnit.INCH);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD
+        );
         pinpoint.resetPosAndIMU();
+
         waitForStart();
+
+        if (opModeIsActive()) {
+            // Example autonomous sequence
+            turnTo(90);
+            driveTo(10, 0);
+            turnTo(90);
+            driveTo(0, 10);
+        }
+    }
+
+    /**
+     * Drive to a field coordinate (x, y) in inches.
+     * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
+     */
+    public void driveTo(double targetX, double targetY) {
+        PIDController pidX = new PIDController(0.03, 0, 0.01);
+        PIDController pidY = new PIDController(0.03, 0, 0.01);
+
+        pidX.setTolerance(0.5);
+        pidY.setTolerance(0.5);
+
         while (opModeIsActive()) {
-            double forward = gamepad1.left_stick_x;
-            double strafe = -gamepad1.left_stick_y;
-            double turn = gamepad1.right_stick_x;
-            drive.driveRobotCentricPowers(strafe, forward, turn);
-            telemetry.addData("Strafe", strafe);
-            telemetry.addData("Turn", turn);
-            telemetry.addData("Forward", forward);
+            pinpoint.update();
+
+            double currentX = pinpoint.getPosX(DistanceUnit.INCH);
+            double currentY = pinpoint.getPosY(DistanceUnit.INCH);
+
+            double errorX = targetX - currentX;
+            double errorY = targetY - currentY;
+
+            // Stop condition
+            if (Math.abs(errorX) < 0.5 && Math.abs(errorY) < 0.5) break;
+
+            // PID outputs in field coordinates
+            double fieldPowerX = pidX.calculate(currentX, targetX);
+            double fieldPowerY = pidY.calculate(currentY, targetY);
+
+            // Clamp powers
+            fieldPowerX = Math.max(-0.7, Math.min(0.7, fieldPowerX));
+            fieldPowerY = Math.max(-0.7, Math.min(0.7, fieldPowerY));
+
+            // Convert field X/Y to robot-centric strafe/forward
+            double robotHeading = Math.toRadians(pinpoint.getHeading(AngleUnit.DEGREES));
+            double robotStrafe = fieldPowerX * Math.cos(robotHeading) + fieldPowerY * Math.sin(robotHeading);
+            double robotForward = -fieldPowerX * Math.sin(robotHeading) + fieldPowerY * Math.cos(robotHeading);
+
+            // Drive
+            drive.driveRobotCentricPowers(robotStrafe, robotForward, 0);
+
+            // Telemetry
+            telemetry.addData("CurrentX", currentX);
+            telemetry.addData("CurrentY", currentY);
+            telemetry.addData("ErrorX", errorX);
+            telemetry.addData("ErrorY", errorY);
+            telemetry.addData("Strafe", robotStrafe);
+            telemetry.addData("Forward", robotForward);
             telemetry.update();
         }
+        // Stop motors when target reached
+        drive.driveRobotCentricPowers(0, 0, 0);
+    }
+
+    /**
+     * Turn to a heading in degrees (field coordinates)
+     */
+    public void turnTo(double targetHeading) {
+        PIDController pid = new PIDController(0.01, 0, 0.002);
+        pid.setTolerance(1.0);
+        pid.setSetPoint(0);  // target error = 0
+
+        while (opModeIsActive()) {
+            pinpoint.update();
+
+            double currentHeading = pinpoint.getHeading(AngleUnit.DEGREES);
+            double error = angleWrap(targetHeading - currentHeading);
+
+            if (Math.abs(error) < 1.0) break;
+
+            double powerTurn = pid.calculate(error, 0);
+            powerTurn = Math.max(-0.8, Math.min(0.8, powerTurn));
+
+            drive.driveRobotCentricPowers(0, 0, powerTurn);
+
+            telemetry.addData("CurrentHeading", currentHeading);
+            telemetry.addData("Error", error);
+            telemetry.addData("PowerTurn", powerTurn);
+            telemetry.update();
+        }
+        drive.driveRobotCentricPowers(0, 0, 0);
+    }
+
+    private double angleWrap(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle <= -180) angle += 360;
+        return angle;
     }
 }
