@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "AUTO11/4Fixed")
+@TeleOp(name = "GRAJAMINTGON")
 public class TEST1024 extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
@@ -64,12 +64,12 @@ public class TEST1024 extends LinearOpMode {
 
         waitForStart();
 
-        if (opModeIsActive()) {
-            // Example autonomous sequence
-            turnTo(90);
-            driveTo(10, 0);
-            turnTo(90);
-            driveTo(0, 10);
+        while (opModeIsActive()) {
+            double strafe = -gamepad1.left_stick_y;
+            double forward = gamepad1.left_stick_x;
+            double turn = gamepad1.right_stick_x;
+            double speed = 1;
+            drive.driveRobotCentricPowers(strafe * speed, forward * speed, turn * speed);
         }
     }
 
