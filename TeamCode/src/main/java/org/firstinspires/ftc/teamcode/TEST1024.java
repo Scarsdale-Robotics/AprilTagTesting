@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "GRAJAMINTGON")
+@TeleOp(name = "DRIVE11/5")
 public class TEST1024 extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
@@ -64,22 +64,21 @@ public class TEST1024 extends LinearOpMode {
 
         waitForStart();
 
-        while (opModeIsActive()) {
-            double strafe = -gamepad1.left_stick_y;
-            double forward = gamepad1.left_stick_x;
-            double turn = gamepad1.right_stick_x;
-            double speed = 1;
-            drive.driveRobotCentricPowers(strafe * speed, forward * speed, turn * speed);
+        if (opModeIsActive()) {
+            turnTo(180);
+            drive.driveRobotCentricPowers(0,0,0);
+            telemetry.addLine("DONE");
+            telemetry.update();
         }
-    }
+    };
 
     /**
      * Drive to a field coordinate (x, y) in inches.
      * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
      */
     public void driveTo(double targetX, double targetY) {
-        PIDController pidX = new PIDController(0.03, 0, 0.01);
-        PIDController pidY = new PIDController(0.03, 0, 0.01);
+        PIDController pidX = new PIDController(0.03, 0.001, 0.01);
+        PIDController pidY = new PIDController(0.03, 0.001, 0.01);
 
         pidX.setTolerance(0.5);
         pidY.setTolerance(0.5);
@@ -101,8 +100,8 @@ public class TEST1024 extends LinearOpMode {
             double fieldPowerY = pidY.calculate(currentY, targetY);
 
             // Clamp powers
-            fieldPowerX = Math.max(-0.7, Math.min(0.7, fieldPowerX));
-            fieldPowerY = Math.max(-0.7, Math.min(0.7, fieldPowerY));
+            fieldPowerX = Math.max(-0.9, Math.min(0.9, fieldPowerX));
+            fieldPowerY = Math.max(-0.9, Math.min(0.9, fieldPowerY));
 
             // Convert field X/Y to robot-centric strafe/forward
             double robotHeading = Math.toRadians(pinpoint.getHeading(AngleUnit.DEGREES));
@@ -129,20 +128,18 @@ public class TEST1024 extends LinearOpMode {
      * Turn to a heading in degrees (field coordinates)
      */
     public void turnTo(double targetHeading) {
-        PIDController pid = new PIDController(0.01, 0, 0.002);
-        pid.setTolerance(1.0);
-        pid.setSetPoint(0);  // target error = 0
+        PIDController pid = new PIDController(0.023, 0.098, 0.004);
+        pid.setTolerance(0.01);
+        pid.setSetPoint(0.02);  // target error = 0
 
         while (opModeIsActive()) {
             pinpoint.update();
 
             double currentHeading = pinpoint.getHeading(AngleUnit.DEGREES);
             double error = angleWrap(targetHeading - currentHeading);
-
-            if (Math.abs(error) < 1.0) break;
-
+            if (error <= 0.08) break;
             double powerTurn = pid.calculate(error, 0);
-            powerTurn = Math.max(-0.8, Math.min(0.8, powerTurn));
+            powerTurn = Math.max(-0.9, Math.min(0.9, powerTurn));
 
             drive.driveRobotCentricPowers(0, 0, powerTurn);
 
