@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "strafe11/7")
-public class TEST1024 extends LinearOpMode {
+@TeleOp(name = "forward11/7")
+public class ForwardTest extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
     public DriveSubsystem drive;
@@ -67,7 +67,7 @@ public class TEST1024 extends LinearOpMode {
         if (opModeIsActive()) {
             telemetry.addLine("Step 1");
             telemetry.update();
-            driveTo(15,0);
+            driveTo(0,15);
         }
     }
 
@@ -76,8 +76,8 @@ public class TEST1024 extends LinearOpMode {
      * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
      */
     public void driveTo(double targetX, double targetY) {
-        PIDController pidX = new PIDController(0.07, 0.006, 0.006);
-        PIDController pidY = new PIDController(0.07, 0.006, 0.006);
+        PIDController pidX = new PIDController(0.03, 0.006, 0.007);
+        PIDController pidY = new PIDController(0.03, 0.006, 0.007);
 
         pidX.setTolerance(0.05);
         pidY.setTolerance(0.05);
@@ -120,14 +120,15 @@ public class TEST1024 extends LinearOpMode {
             telemetry.addData("Forward", fieldPowerY);
             telemetry.update();
         }
-
+        // Stop motors when target reached
+        drive.driveRobotCentricPowers(0, 0, 0);
     }
 
     /**
      * Turn to a heading in degrees (field coordinates)
      */
     public void turnTo(double targetHeading) {
-        PIDController pid = new PIDController(0.02, 0.098, 0.003);
+        PIDController pid = new PIDController(0.015, 0.018, 0.003);
         pid.setTolerance(0.01);
         pid.setSetPoint(0.02);  // target error = 0
 

@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "strafe11/7")
-public class TEST1024 extends LinearOpMode {
+@TeleOp(name = "turn11/7")
+public class TurnTest extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
     public DriveSubsystem drive;
@@ -40,10 +40,10 @@ public class TEST1024 extends LinearOpMode {
         leftBack.setRunMode(Motor.RunMode.RawPower);
         rightBack.setRunMode(Motor.RunMode.RawPower);
 
-        leftFront.setInverted(false);
+        leftFront.setInverted(true);
         leftBack.setInverted(true);
         rightFront.setInverted(true);
-        rightBack.setInverted(false);
+        rightBack.setInverted(true);
 
         leftFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
@@ -67,7 +67,7 @@ public class TEST1024 extends LinearOpMode {
         if (opModeIsActive()) {
             telemetry.addLine("Step 1");
             telemetry.update();
-            driveTo(15,0);
+            turnTo(90);
         }
     }
 
@@ -76,11 +76,11 @@ public class TEST1024 extends LinearOpMode {
      * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
      */
     public void driveTo(double targetX, double targetY) {
-        PIDController pidX = new PIDController(0.07, 0.006, 0.006);
-        PIDController pidY = new PIDController(0.07, 0.006, 0.006);
+        PIDController pidX = new PIDController(0.05, 0.07, 0.04);
+        PIDController pidY = new PIDController(0.05, 0.07, 0.04);
 
-        pidX.setTolerance(0.05);
-        pidY.setTolerance(0.05);
+        pidX.setTolerance(0.5);
+        pidY.setTolerance(0.5);
         pidX.setSetPoint(targetX);
         pidY.setSetPoint(targetY);
         while (opModeIsActive() && (!pidY.atSetPoint() || !pidX.atSetPoint())) {
@@ -100,8 +100,8 @@ public class TEST1024 extends LinearOpMode {
             double fieldPowerY = pidY.calculate(currentY, targetY);
 
             // Clamp powers
-            fieldPowerX = Math.max(-0.4, Math.min(0.4, fieldPowerX));
-            fieldPowerY = Math.max(-0.4, Math.min(0.4, fieldPowerY));
+            fieldPowerX = Math.max(-0.3, Math.min(0.3, fieldPowerX));
+            fieldPowerY = Math.max(-0.3, Math.min(0.3, fieldPowerY));
 
             // Convert field X/Y to robot-centric strafe/forward
             //double robotHeading = Math.toRadians(pinpoint.getHeading(AngleUnit.DEGREES));
@@ -120,7 +120,8 @@ public class TEST1024 extends LinearOpMode {
             telemetry.addData("Forward", fieldPowerY);
             telemetry.update();
         }
-
+        // Stop motors when target reached
+        drive.driveRobotCentricPowers(0, 0, 0);
     }
 
     /**
