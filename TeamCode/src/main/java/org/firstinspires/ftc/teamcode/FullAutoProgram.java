@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "fullauto11/7")
+@TeleOp(name = "fullauto11/8")
 public class FullAutoProgram extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
@@ -65,9 +65,7 @@ public class FullAutoProgram extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
-            telemetry.addLine("Step 1");
-            telemetry.update();
-            driveTo(15,0);
+            driveTo(15,10);
             drive.driveRobotCentricPowers(0, 0, 0);
             idle();
             sleep(100);
@@ -75,7 +73,7 @@ public class FullAutoProgram extends LinearOpMode {
             drive.driveRobotCentricPowers(0, 0, 0);
             idle();
             sleep(100);
-            driveTo(15,15);
+            driveTo(0,0);
             drive.driveRobotCentricPowers(0, 0, 0);
             idle();
             sleep(100);
@@ -118,13 +116,13 @@ public class FullAutoProgram extends LinearOpMode {
             fieldPowerX = Math.max(-0.4, Math.min(0.4, fieldPowerX));
             fieldPowerY = Math.max(-0.4, Math.min(0.4, fieldPowerY));
 
-            // Convert field X/Y to robot-centric strafe/forward
-            //double robotHeading = Math.toRadians(pinpoint.getHeading(AngleUnit.DEGREES));
-            //double robotStrafe = fieldPowerX * Math.cos(robotHeading) + fieldPowerY * Math.sin(robotHeading);
-            //double robotForward = -fieldPowerX * Math.sin(robotHeading) + fieldPowerY * Math.cos(robotHeading);
+            // Convert field X/Y to robot-centric strafe/forward using transformation matrix
+            double robotHeading = Math.toRadians(pinpoint.getHeading(AngleUnit.DEGREES));
+            double robotStrafe = fieldPowerX * Math.cos(robotHeading) + fieldPowerY * Math.sin(robotHeading);
+            double robotForward = -fieldPowerX * Math.sin(robotHeading) + fieldPowerY * Math.cos(robotHeading);
 
             // Drive
-            drive.driveRobotCentricPowers(fieldPowerX, fieldPowerY, 0);
+            drive.driveRobotCentricPowers(robotStrafe, robotForward,0);
 
             // Telemetry
             telemetry.addData("CurrentX", currentX);

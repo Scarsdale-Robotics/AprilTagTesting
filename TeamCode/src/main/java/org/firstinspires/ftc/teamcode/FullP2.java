@@ -78,16 +78,22 @@ public class FullP2 extends LinearOpMode {
      * Drive to a field coordinate (x, y) in inches.
      * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
      */
-    public void driveTo(double targetX, double targetY) {
+    public void driveTo(double targetX, double targetY, double targetHeading) {
         PIDController pidX = new PIDController(0.05, 0.07, 0.04);
         PIDController pidY = new PIDController(0.05, 0.07, 0.04);
-
+        PIDController pid = new PIDController(0.02, 0.098, 0.003);
+        pid.setTolerance(0.01);
+        pid.setSetPoint(0.02);
         pidX.setTolerance(0.5);
         pidY.setTolerance(0.5);
         pidX.setSetPoint(targetX);
         pidY.setSetPoint(targetY);
         while (opModeIsActive() && (!pidY.atSetPoint() || !pidX.atSetPoint())) {
             pinpoint.update();
+            double currentHeading = pinpoint.getHeading(AngleUnit.DEGREES);
+            double error = angleWrap(targetHeading - currentHeading);
+            double powerTurn = pid.calculate(error, 0);
+            powerTurn = Math.max(-0.9, Math.min(0.9, powerTurn));
 
             double currentX = pinpoint.getPosX(DistanceUnit.INCH);
             double currentY = pinpoint.getPosY(DistanceUnit.INCH);
@@ -96,7 +102,7 @@ public class FullP2 extends LinearOpMode {
             double errorY = targetY - currentY;
 
             // Stop condition
-            if (Math.abs(errorX) < 0.1 && Math.abs(errorY) < 0.1) break;
+            if (Math.abs(errorX) < 0.1 && Math.abs(errorY) < 0.1 && error <= 0.08) break;
 
             // PID outputs in field coordinates
             double fieldPowerX = pidX.calculate(currentX, targetX);
@@ -112,7 +118,7 @@ public class FullP2 extends LinearOpMode {
             //double robotForward = -fieldPowerX * Math.sin(robotHeading) + fieldPowerY * Math.cos(robotHeading);
 
             // Drive
-            drive.driveRobotCentricPowers(fieldPowerX, fieldPowerY, 0);
+            drive.driveRobotCentricPowers(fieldPowerX, fieldPowerY, powerTurn);
 
             // Telemetry
             telemetry.addData("CurrentX", currentX);
@@ -121,6 +127,9 @@ public class FullP2 extends LinearOpMode {
             telemetry.addData("ErrorY", errorY);
             telemetry.addData("Strafe", fieldPowerX);
             telemetry.addData("Forward", fieldPowerY);
+            telemetry.addData("CurrentHeading", currentHeading);
+            telemetry.addData("ErrorHeading", error);
+            telemetry.addData("PowerTurn", powerTurn);
             telemetry.update();
         }
         // Stop motors when target reached
