@@ -93,7 +93,7 @@ public class TEST1024 extends LinearOpMode {
             double errorY = targetY - currentY;
 
             // Stop condition
-            if (Math.abs(errorX) < 0.1 && Math.abs(errorY) < 0.1) break;
+            if (Math.abs(errorX) < 0.3 && Math.abs(errorY) < 0.8) break;
 
             // PID outputs in field coordinates
             double fieldPowerX = pidX.calculate(currentX, targetX);

@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name = "forward11/7")
-public class ForwardTest extends LinearOpMode {
+@TeleOp(name = "fullauto11/7")
+public class FullAutoProgram extends LinearOpMode {
 
     public Motor leftFront, leftBack, rightFront, rightBack;
     public DriveSubsystem drive;
@@ -67,7 +67,18 @@ public class ForwardTest extends LinearOpMode {
         if (opModeIsActive()) {
             telemetry.addLine("Step 1");
             telemetry.update();
-            driveTo(0,15);
+            driveTo(15,0);
+            drive.driveRobotCentricPowers(0, 0, 0);
+            idle();
+            sleep(100);
+            turnTo(180);
+            drive.driveRobotCentricPowers(0, 0, 0);
+            idle();
+            sleep(100);
+            driveTo(15,15);
+            drive.driveRobotCentricPowers(0, 0, 0);
+            idle();
+            sleep(100);
         }
     }
 
@@ -76,10 +87,14 @@ public class ForwardTest extends LinearOpMode {
      * Converts field X/Y PID outputs to robot-centric strafe/forward velocities.
      */
     public void driveTo(double targetX, double targetY) {
-        PIDController pidX = new PIDController(0.04, 0.038, 0.003);
+        leftFront.setInverted(false);
+        leftBack.setInverted(true);
+        rightFront.setInverted(true);
+        rightBack.setInverted(false);
+        PIDController pidX = new PIDController(0.07, 0.006, 0.006);
         PIDController pidY = new PIDController(0.04, 0.038, 0.003);
 
-        pidX.setTolerance(0.5);
+        pidX.setTolerance(0.05);
         pidY.setTolerance(0.5);
         pidX.setSetPoint(targetX);
         pidY.setSetPoint(targetY);
@@ -93,7 +108,7 @@ public class ForwardTest extends LinearOpMode {
             double errorY = targetY - currentY;
 
             // Stop condition
-            if (Math.abs(errorX) < 0.8 && Math.abs(errorY) < 0.8) break;
+            if (Math.abs(errorX) < 0.3 && Math.abs(errorY) < 0.3) break;
 
             // PID outputs in field coordinates
             double fieldPowerX = pidX.calculate(currentX, targetX);
@@ -120,24 +135,29 @@ public class ForwardTest extends LinearOpMode {
             telemetry.addData("Forward", fieldPowerY);
             telemetry.update();
         }
-        // Stop motors when target reached
-        drive.driveRobotCentricPowers(0, 0, 0);
+
     }
 
     /**
      * Turn to a heading in degrees (field coordinates)
      */
     public void turnTo(double targetHeading) {
-        PIDController pid = new PIDController(0.015, 0.018, 0.003);
+        leftFront.setInverted(true);
+        leftBack.setInverted(true);
+        rightFront.setInverted(true);
+        rightBack.setInverted(true);
+        PIDController pid = new PIDController(0.02, 0.098, 0.003);
         pid.setTolerance(0.01);
-        pid.setSetPoint(0.02);  // target error = 0
+        pid.setSetPoint(0);  // target error = 0
 
         while (opModeIsActive()) {
             pinpoint.update();
 
             double currentHeading = pinpoint.getHeading(AngleUnit.DEGREES);
             double error = angleWrap(targetHeading - currentHeading);
-            if (error <= 0.08) break;
+            if (Math.abs(error) <= 0.08) {
+                break;
+            }
             double powerTurn = pid.calculate(error, 0);
             powerTurn = Math.max(-0.9, Math.min(0.9, powerTurn));
 
@@ -149,6 +169,11 @@ public class ForwardTest extends LinearOpMode {
             telemetry.update();
         }
         drive.driveRobotCentricPowers(0, 0, 0);
+        leftFront.setInverted(false);
+        leftBack.setInverted(true);
+        rightFront.setInverted(true);
+        rightBack.setInverted(false);
+
     }
 
     private double angleWrap(double angle) {
