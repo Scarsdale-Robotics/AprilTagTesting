@@ -92,7 +92,7 @@ public class DriveSubsystem extends SubsystemBase {
         if (speed==0) theta = 0;
         else theta = Math.atan2(forward, strafe);
 
-        driveFieldCentric(theta, speed, -turn * RotationConstants.MAX_ANGULAR_VELOCITY, 0.0);
+        driveFieldCentric(theta, speed, turn * RotationConstants.MAX_ANGULAR_VELOCITY, 0.0);
     }
 
     /**
@@ -103,7 +103,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param turn      Desired angular velocity in rad/s.
      */
     public void driveRobotCentric(double theta, double speed, double turn) {
-        driveFieldCentric(theta, speed, -turn, 0.0);
+        driveFieldCentric(theta, speed, turn, 0.0);
     }
 
     /**
